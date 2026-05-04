@@ -3,10 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLIND RANK</title>
+    <title>BLIND RANK Application</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }
+        .container { width: 90%; margin: auto; overflow: hidden; }
+        header { background: #35424a; color: #ffffff; padding: 20px 0; text-align: center; }
+        .ranking { display: flex; flex-direction: column; align-items: center; }
+        .item { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 10px; width: 100%; max-width: 800px; background: #ffffff; }
+        .photo { width: 100%; height: auto; }
+        button { padding: 10px 20px; background: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #4cae4c; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the BLIND RANK Application</h1>
-    <p>This application allows users to rank items without being influenced by biases.</p>
+    <header>
+        <h1>BLIND RANK Application</h1>
+    </header>
+    <div class="container">
+        <div class="ranking" id="ranking">
+            <div class="item">
+                <img src="photo1.jpg" alt="Item 1" class="photo">
+                <h2>Item 1</h2>
+                <p>Description for Item 1</p>
+                <p>ELO Score: <span id="score1">1500</span></p>
+                <button onclick="rankItem(1)">Rank This Item</button>
+            </div>
+            <div class="item">
+                <img src="photo2.jpg" alt="Item 2" class="photo">
+                <h2>Item 2</h2>
+                <p>Description for Item 2</p>
+                <p>ELO Score: <span id="score2">1500</span></p>
+                <button onclick="rankItem(2)">Rank This Item</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let scores = { 1: 1500, 2: 1500 };
+
+        function updateScores(winner, loser) {
+            const k = 32;
+            const expectedScoreW = 1 / (1 + Math.pow(10, (scores[loser] - scores[winner]) / 400));
+            const expectedScoreL = 1 / (1 + Math.pow(10, (scores[winner] - scores[loser]) / 400));
+            scores[winner] += k * (1 - expectedScoreW);
+            scores[loser] += k * (0 - expectedScoreL);
+            document.getElementById(`score${winner}`).innerText = Math.round(scores[winner]);
+            document.getElementById(`score${loser}`).innerText = Math.round(scores[loser]);
+        }
+
+        function rankItem(itemId) {
+            if(itemId === 1) {
+                updateScores(1, 2);
+            } else {
+                updateScores(2, 1);
+            }
+        }
+    </script>
 </body>
 </html>
