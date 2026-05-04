@@ -1,62 +1,868 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLIND RANK Application</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }
-        .container { width: 90%; margin: auto; overflow: hidden; }
-        header { background: #35424a; color: #ffffff; padding: 20px 0; text-align: center; }
-        .ranking { display: flex; flex-direction: column; align-items: center; }
-        .item { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 10px; width: 100%; max-width: 800px; background: #ffffff; }
-        .photo { width: 100%; height: auto; }
-        button { padding: 10px 20px; background: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #4cae4c; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BLIND RANK</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+–bg: #f5f0e8;
+–surface: #edeae0;
+–border: #d4cfc2;
+–ink: #1a1814;
+–ink2: #6b6560;
+–accent: #c8321a;
+–accent2: #2d5fa6;
+–green: #1a7a3c;
+–card: #ffffff;
+–shadow: rgba(26,24,20,0.12);
+}
+
+- { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; width:100%; background:var(–bg); color:var(–ink); font-family:‘DM Mono’,monospace; overflow:hidden; overscroll-behavior:none; }
+
+/* ── SCREENS ── */
+.screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; opacity:0; pointer-events:none; transition:opacity 0.3s ease; overflow-y:auto; overflow-x:hidden; }
+.screen.active { opacity:1; pointer-events:all; }
+
+/* ── SETUP SCREEN ── */
+#setup-screen { background:var(–bg); justify-content:flex-start; }
+
+.setup-header {
+width:100%; padding:48px 24px 0;
+border-bottom:2px solid var(–ink);
+padding-bottom:20px;
+}
+.app-title {
+font-family:‘Bebas Neue’,sans-serif;
+font-size:72px; line-height:1;
+color:var(–ink); letter-spacing:0.02em;
+}
+.app-title span { color:var(–accent); }
+.app-sub { font-size:10px; letter-spacing:0.2em; color:var(–ink2); margin-top:4px; text-transform:uppercase; }
+
+.mode-section { width:100%; padding:20px 24px 0; }
+.section-label { font-size:9px; letter-spacing:0.25em; color:var(–ink2); text-transform:uppercase; margin-bottom:10px; }
+
+.mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.mode-card {
+background:var(–card);
+border:1.5px solid var(–border);
+border-radius:6px;
+padding:14px 12px;
+cursor:pointer;
+transition:all 0.15s;
+text-align:center;
+}
+.mode-card.selected { border-color:var(–accent); background:#fff5f3; }
+.mode-card:active { transform:scale(0.97); }
+.mode-icon { font-size:28px; display:block; margin-bottom:6px; }
+.mode-name { font-size:10px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(–ink); }
+.mode-desc { font-size:9px; color:var(–ink2); margin-top:3px; line-height:1.5; }
+
+/* Items list */
+.items-section { width:100%; padding:20px 24px 0; flex:1; }
+
+.items-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+
+.item-row {
+display:flex; align-items:center; gap:10px;
+background:var(–card);
+border:1.5px solid var(–border);
+border-radius:6px;
+padding:10px 12px;
+animation:rowIn 0.2s ease;
+}
+@keyframes rowIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+.item-thumb {
+width:44px; height:44px; border-radius:4px;
+object-fit:cover; flex-shrink:0;
+border:1px solid var(–border);
+}
+.item-thumb-placeholder {
+width:44px; height:44px; border-radius:4px; flex-shrink:0;
+background:var(–surface); border:1px solid var(–border);
+display:flex; align-items:center; justify-content:center;
+font-size:18px;
+}
+
+.item-label-wrap { flex:1; min-width:0; }
+.item-label { font-size:12px; font-weight:500; color:var(–ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-sublabel { font-size:9px; color:var(–ink2); margin-top:1px; letter-spacing:0.1em; text-transform:uppercase; }
+
+.item-del {
+width:32px; height:32px; border-radius:50%;
+background:none; border:1px solid var(–border);
+color:var(–ink2); font-size:14px; cursor:pointer;
+display:flex; align-items:center; justify-content:center;
+flex-shrink:0; transition:all 0.12s;
+}
+.item-del:active { background:var(–accent); color:#fff; border-color:var(–accent); }
+
+/* Add controls */
+.add-section { width:100%; padding:16px 24px; }
+
+.add-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.add-tab {
+flex:1; padding:9px; border-radius:4px; border:1.5px solid var(–border);
+background:var(–surface); font-family:‘DM Mono’,monospace;
+font-size:9px; letter-spacing:0.15em; text-transform:uppercase;
+color:var(–ink2); cursor:pointer; transition:all 0.12s; text-align:center;
+}
+.add-tab.active { background:var(–ink); color:var(–bg); border-color:var(–ink); }
+.add-tab:active { transform:scale(0.96); }
+
+.add-row { display:flex; gap:8px; }
+.text-input {
+flex:1; padding:13px 14px;
+border:1.5px solid var(–border); border-radius:6px;
+background:var(–card); font-family:‘DM Mono’,monospace;
+font-size:13px; color:var(–ink); outline:none;
+transition:border-color 0.15s;
+}
+.text-input:focus { border-color:var(–ink); }
+.text-input::placeholder { color:var(–border); }
+
+.add-btn {
+width:48px; height:48px; border-radius:6px; flex-shrink:0;
+background:var(–ink); color:var(–bg); border:none;
+font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+transition:all 0.12s;
+}
+.add-btn:active { transform:scale(0.93); }
+
+.photo-add-btn {
+width:100%; padding:14px;
+border:1.5px dashed var(–border); border-radius:6px;
+background:var(–surface); font-family:‘DM Mono’,monospace;
+font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+color:var(–ink2); cursor:pointer; transition:all 0.12s;
+display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.photo-add-btn:active { border-color:var(–ink); color:var(–ink); }
+
+#photo-file-input { display:none; }
+
+.start-section { width:100%; padding:16px 24px 40px; }
+
+.start-btn {
+width:100%; padding:18px;
+background:var(–accent); color:#fff; border:none;
+border-radius:6px; font-family:‘DM Mono’,monospace;
+font-size:12px; font-weight:500; letter-spacing:0.2em;
+text-transform:uppercase; cursor:pointer; transition:all 0.15s;
+}
+.start-btn:active { transform:scale(0.97); background:#a82814; }
+.start-btn:disabled { background:var(–border); color:var(–ink2); cursor:not-allowed; transform:none; }
+
+.item-count-badge {
+display:inline-block; background:var(–accent); color:#fff;
+font-size:9px; border-radius:10px; padding:2px 7px;
+margin-left:6px; vertical-align:middle;
+}
+
+/* ── RANKING SCREEN ── */
+#rank-screen { background:var(–bg); justify-content:flex-start; }
+
+.rank-topbar {
+width:100%; padding:16px 20px;
+display:flex; align-items:center; justify-content:space-between;
+border-bottom:1.5px solid var(–border); flex-shrink:0;
+}
+.rank-title { font-family:‘Bebas Neue’,sans-serif; font-size:28px; color:var(–ink); }
+.rank-progress-wrap { flex:1; margin:0 16px; }
+.rank-progress-bar-bg { height:3px; background:var(–border); border-radius:2px; }
+.rank-progress-bar { height:100%; background:var(–accent); border-radius:2px; transition:width 0.3s ease; }
+.rank-progress-label { font-size:9px; color:var(–ink2); letter-spacing:0.15em; margin-top:4px; text-align:right; }
+
+.match-stage {
+width:100%; flex:1;
+display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+padding:12px 20px; gap:10px;
+position:relative;
+}
+
+.vs-divider {
+font-family:‘Bebas Neue’,sans-serif; font-size:22px;
+color:var(–ink2); letter-spacing:0.1em; flex-shrink:0;
+}
+
+/* Item cards */
+.match-card {
+width:100%; flex:1;
+border-radius:8px; overflow:hidden;
+border:1.5px solid var(–border);
+background:var(–card);
+box-shadow:0 4px 20px var(–shadow);
+cursor:pointer; transition:transform 0.12s, box-shadow 0.12s;
+position:relative; display:flex; flex-direction:column;
+max-height:38vh;
+}
+.match-card:active { transform:scale(0.97); box-shadow:0 2px 8px var(–shadow); }
+.match-card.winner-flash { animation:winFlash 0.3s ease; }
+@keyframes winFlash { 0%,100%{background:var(–card)} 50%{background:#e8f5ec} }
+
+/* Photo card */
+.match-card.photo-card img {
+width:100%; height:100%; object-fit:cover; display:block;
+pointer-events:none; user-select:none; -webkit-user-drag:none;
+}
+.match-card.photo-card { min-height:160px; }
+
+/* Text card */
+.match-card.text-card {
+align-items:center; justify-content:center;
+padding:20px; min-height:100px;
+}
+.text-card-emoji { font-size:36px; margin-bottom:8px; }
+.text-card-value { font-size:18px; font-weight:500; color:var(–ink); text-align:center; line-height:1.4; word-break:break-word; }
+
+/* Mixed card (photo + label) */
+.mixed-card-img { width:100%; flex:1; min-height:100px; object-fit:cover; display:block; }
+.mixed-card-label {
+padding:10px 14px; flex-shrink:0;
+font-size:13px; font-weight:500; color:var(–ink);
+border-top:1px solid var(–border); background:var(–card);
+}
+
+.card-pick-hint {
+position:absolute; top:10px; right:10px;
+background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);
+-webkit-backdrop-filter:blur(4px);
+border:1px solid var(–border); border-radius:20px;
+padding:4px 10px; font-size:9px; letter-spacing:0.15em;
+text-transform:uppercase; color:var(–ink2); pointer-events:none;
+}
+
+.rank-actions {
+width:100%; padding:10px 20px 16px;
+display:flex; gap:8px; flex-shrink:0;
+}
+.rank-action-btn {
+flex:1; padding:15px 8px; border-radius:6px;
+font-family:‘DM Mono’,monospace; font-size:10px;
+font-weight:500; letter-spacing:0.12em; text-transform:uppercase;
+cursor:pointer; border:none; transition:all 0.12s;
+display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.rank-action-btn .btn-icon { font-size:18px; }
+.rank-action-btn:active { transform:scale(0.95); }
+.btn-skip { background:var(–surface); color:var(–ink2); border:1.5px solid var(–border); }
+.btn-undo-sm { background:var(–surface); color:var(–ink2); border:1.5px solid var(–border); flex:0 0 52px; }
+
+.tie-btn {
+width:calc(100% - 40px); margin:0 20px;
+padding:12px; border-radius:6px; border:1.5px solid var(–border);
+background:var(–surface); font-family:‘DM Mono’,monospace;
+font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
+color:var(–ink2); cursor:pointer; flex-shrink:0;
+transition:all 0.12s; margin-bottom:8px;
+}
+.tie-btn:active { background:var(–ink); color:var(–bg); border-color:var(–ink); }
+
+/* ── RESULTS SCREEN ── */
+#results-screen { background:var(–bg); justify-content:flex-start; }
+
+.results-topbar {
+width:100%; padding:32px 24px 20px;
+border-bottom:2px solid var(–ink); flex-shrink:0;
+}
+.results-headline { font-family:‘Bebas Neue’,sans-serif; font-size:56px; line-height:1; color:var(–ink); }
+.results-headline span { color:var(–accent); }
+.results-meta { font-size:9px; letter-spacing:0.2em; color:var(–ink2); margin-top:4px; text-transform:uppercase; }
+
+.results-list { width:100%; padding:16px 20px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+
+.result-item {
+display:flex; align-items:center; gap:12px;
+background:var(–card); border:1.5px solid var(–border);
+border-radius:6px; overflow:hidden;
+animation:slideUp 0.35s ease both;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+
+.result-rank-num {
+font-family:‘Bebas Neue’,sans-serif; font-size:38px;
+width:48px; text-align:center; flex-shrink:0;
+color:var(–border); padding-left:4px;
+}
+.result-rank-num.r1 { color:var(–accent); }
+.result-rank-num.r2 { color:var(–ink2); }
+.result-rank-num.r3 { color:#b87333; }
+
+.result-thumb { width:64px; height:64px; object-fit:cover; flex-shrink:0; }
+.result-thumb-text {
+width:64px; height:64px; flex-shrink:0;
+display:flex; align-items:center; justify-content:center;
+background:var(–surface); font-size:24px;
+}
+
+.result-info { flex:1; padding:12px 12px 12px 0; min-width:0; }
+.result-name { font-size:13px; font-weight:500; color:var(–ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.result-score { font-size:11px; color:var(–ink2); margin-top:2px; }
+.result-bar-bg { height:3px; background:var(–border); border-radius:2px; margin-top:6px; width:100%; }
+.result-bar { height:100%; border-radius:2px; background:var(–accent); width:0; transition:width 0.6s ease; }
+
+.results-footer { width:100%; padding:16px 24px 48px; display:flex; flex-direction:column; gap:8px; }
+.results-btn {
+width:100%; padding:16px; border-radius:6px;
+font-family:‘DM Mono’,monospace; font-size:11px;
+font-weight:500; letter-spacing:0.18em; text-transform:uppercase;
+cursor:pointer; transition:all 0.12s; border:none;
+}
+.results-btn-primary { background:var(–ink); color:var(–bg); }
+.results-btn-primary:active { background:var(–accent); }
+.results-btn-ghost { background:transparent; color:var(–ink2); border:1.5px solid var(–border); }
+.results-btn-ghost:active { background:var(–surface); }
+
+/* card exit animations */
+@keyframes exitRight { to { transform:translateX(110%) rotate(8deg); opacity:0; } }
+@keyframes exitLeft  { to { transform:translateX(-110%) rotate(-8deg); opacity:0; } }
+.exit-right { animation:exitRight 0.22s ease forwards; }
+.exit-left  { animation:exitLeft 0.22s ease forwards; }
+
+/* loading shimmer */
+.shimmer { background:linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
+@keyframes shimmer { to{background-position:-200% 0} }
+</style>
+
 </head>
 <body>
-    <header>
-        <h1>BLIND RANK Application</h1>
-    </header>
-    <div class="container">
-        <div class="ranking" id="ranking">
-            <div class="item">
-                <img src="photo1.jpg" alt="Item 1" class="photo">
-                <h2>Item 1</h2>
-                <p>Description for Item 1</p>
-                <p>ELO Score: <span id="score1">1500</span></p>
-                <button onclick="rankItem(1)">Rank This Item</button>
-            </div>
-            <div class="item">
-                <img src="photo2.jpg" alt="Item 2" class="photo">
-                <h2>Item 2</h2>
-                <p>Description for Item 2</p>
-                <p>ELO Score: <span id="score2">1500</span></p>
-                <button onclick="rankItem(2)">Rank This Item</button>
-            </div>
-        </div>
+
+<!-- ══════════ SETUP SCREEN ══════════ -->
+
+<div id="setup-screen" class="screen active">
+
+  <div class="setup-header">
+    <div class="app-title">BLIND<span>RANK</span></div>
+    <div class="app-sub">Head-to-head · ELO scoring · Any type</div>
+  </div>
+
+  <div class="mode-section">
+    <div class="section-label">What are you ranking?</div>
+    <div class="mode-grid">
+      <div class="mode-card selected" data-mode="photo" onclick="selectMode('photo')">
+        <span class="mode-icon">🖼️</span>
+        <div class="mode-name">Photos</div>
+        <div class="mode-desc">From your gallery</div>
+      </div>
+      <div class="mode-card" data-mode="text" onclick="selectMode('text')">
+        <span class="mode-icon">💬</span>
+        <div class="mode-name">Text</div>
+        <div class="mode-desc">Names, ideas, options</div>
+      </div>
+      <div class="mode-card" data-mode="mixed" onclick="selectMode('mixed')">
+        <span class="mode-icon">🗂️</span>
+        <div class="mode-name">Mixed</div>
+        <div class="mode-desc">Photos + labels</div>
+      </div>
+      <div class="mode-card" data-mode="custom" onclick="selectMode('custom')">
+        <span class="mode-icon">✏️</span>
+        <div class="mode-name">Custom</div>
+        <div class="mode-desc">Emoji + any text</div>
+      </div>
     </div>
-    <script>
-        let scores = { 1: 1500, 2: 1500 };
+  </div>
 
-        function updateScores(winner, loser) {
-            const k = 32;
-            const expectedScoreW = 1 / (1 + Math.pow(10, (scores[loser] - scores[winner]) / 400));
-            const expectedScoreL = 1 / (1 + Math.pow(10, (scores[winner] - scores[loser]) / 400));
-            scores[winner] += k * (1 - expectedScoreW);
-            scores[loser] += k * (0 - expectedScoreL);
-            document.getElementById(`score${winner}`).innerText = Math.round(scores[winner]);
-            document.getElementById(`score${loser}`).innerText = Math.round(scores[loser]);
-        }
+  <div class="items-section">
+    <div class="section-label">
+      Items <span class="item-count-badge" id="count-badge">0</span>
+    </div>
+    <div class="items-list" id="items-list"></div>
+  </div>
 
-        function rankItem(itemId) {
-            if(itemId === 1) {
-                updateScores(1, 2);
-            } else {
-                updateScores(2, 1);
-            }
-        }
-    </script>
+  <div class="add-section">
+    <!-- Photo mode -->
+    <div id="add-photo-ui">
+      <button class="photo-add-btn" onclick="document.getElementById('photo-file-input').click()">
+        <span>📷</span> <span>Add photos from gallery</span>
+      </button>
+      <input type="file" id="photo-file-input" accept="image/*" multiple>
+    </div>
+
+```
+<!-- Text mode -->
+<div id="add-text-ui" style="display:none">
+  <div class="add-row">
+    <input type="text" class="text-input" id="text-input" placeholder="Type an option…" maxlength="80">
+    <button class="add-btn" onclick="addTextItem()">+</button>
+  </div>
+</div>
+
+<!-- Mixed mode -->
+<div id="add-mixed-ui" style="display:none">
+  <button class="photo-add-btn" onclick="document.getElementById('mixed-file-input').click()">
+    <span>📷</span> <span>Add photos (label = filename)</span>
+  </button>
+  <input type="file" id="mixed-file-input" accept="image/*" multiple style="display:none">
+  <div style="margin-top:8px" class="add-row">
+    <input type="text" class="text-input" id="mixed-label-input" placeholder="Or type a label…" maxlength="60">
+    <button class="add-btn" onclick="addMixedText()">+</button>
+  </div>
+</div>
+
+<!-- Custom mode -->
+<div id="add-custom-ui" style="display:none">
+  <div class="add-tabs">
+    <div class="add-tab active" onclick="setCustomTab('emoji')" id="tab-emoji">Emoji + Text</div>
+    <div class="add-tab" onclick="setCustomTab('text')" id="tab-text-only">Text only</div>
+  </div>
+  <div class="add-row">
+    <input type="text" class="text-input" id="custom-emoji-input" placeholder="😀" maxlength="4" style="width:60px;flex:none;text-align:center;font-size:22px;">
+    <input type="text" class="text-input" id="custom-text-input" placeholder="Label…" maxlength="60">
+    <button class="add-btn" onclick="addCustomItem()">+</button>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div class="start-section">
+    <button class="start-btn" id="start-btn" disabled onclick="startRanking()">
+      Add at least 2 items
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ RANKING SCREEN ══════════ -->
+
+<div id="rank-screen" class="screen">
+  <div class="rank-topbar">
+    <div class="rank-title">RANK</div>
+    <div class="rank-progress-wrap">
+      <div class="rank-progress-bar-bg">
+        <div class="rank-progress-bar" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="rank-progress-label" id="progress-label">0 / 0</div>
+    </div>
+    <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink2);" onclick="confirmQuit()">✕</button>
+  </div>
+
+  <div class="match-stage" id="match-stage">
+    <div class="match-card" id="card-a" onclick="vote('a')">
+      <div class="card-pick-hint">Tap to pick</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="match-card" id="card-b" onclick="vote('b')">
+      <div class="card-pick-hint">Tap to pick</div>
+    </div>
+  </div>
+
+<button class="tie-btn" onclick="voteTie()">🤝 It’s a tie</button>
+
+  <div class="rank-actions">
+    <button class="rank-action-btn btn-undo-sm" onclick="undoLast()">
+      <span class="btn-icon">↩</span>
+      <span>undo</span>
+    </button>
+    <button class="rank-action-btn btn-skip" onclick="skipMatch()">
+      <span class="btn-icon">⟳</span>
+      <span>skip</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ RESULTS SCREEN ══════════ -->
+
+<div id="results-screen" class="screen">
+  <div class="results-topbar">
+    <div class="results-headline">THE<br><span>VERDICT</span></div>
+    <div class="results-meta" id="results-meta">— matchups complete</div>
+  </div>
+  <div class="results-list" id="results-list"></div>
+  <div class="results-footer">
+    <button class="results-btn results-btn-primary" onclick="rankAgain()">Rank Again</button>
+    <button class="results-btn results-btn-ghost" onclick="addMoreItems()">Add More Items</button>
+    <button class="results-btn results-btn-ghost" onclick="exportResults()">Export Results</button>
+    <button class="results-btn results-btn-ghost" onclick="goSetup()">Start Over</button>
+  </div>
+</div>
+
+<script>
+// ══════════ STATE ══════════
+let mode = 'photo';
+let items = [];       // { id, type:'photo'|'text'|'custom', src?, label, emoji? }
+let scores = {};
+let matchups = [];
+let currentMatch = 0;
+let history = [];
+let skipped = [];
+let completedCount = 0;
+let customTab = 'emoji';
+
+const K = 32;
+const ELO_START = 1000;
+
+// ══════════ MODE SELECTION ══════════
+function selectMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-mode="${m}"]`).classList.add('selected');
+
+  document.getElementById('add-photo-ui').style.display  = m === 'photo'  ? 'block' : 'none';
+  document.getElementById('add-text-ui').style.display   = m === 'text'   ? 'block' : 'none';
+  document.getElementById('add-mixed-ui').style.display  = m === 'mixed'  ? 'block' : 'none';
+  document.getElementById('add-custom-ui').style.display = m === 'custom' ? 'block' : 'none';
+}
+
+// ══════════ ADD ITEMS ══════════
+
+// Photo
+document.getElementById('photo-file-input').addEventListener('change', e => {
+  handlePhotoFiles(Array.from(e.target.files), 'photo');
+  e.target.value = '';
+});
+document.getElementById('mixed-file-input').addEventListener('change', e => {
+  handlePhotoFiles(Array.from(e.target.files), 'mixed');
+  e.target.value = '';
+});
+
+async function handlePhotoFiles(files, type) {
+  for (const f of files) {
+    const src = await readFile(f);
+    const label = f.name.replace(/\.[^.]+$/, '');
+    addItem({ type, src, label, emoji: null });
+  }
+}
+
+function readFile(f) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.readAsDataURL(f);
+  });
+}
+
+// Text
+document.getElementById('text-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTextItem(); });
+function addTextItem() {
+  const val = document.getElementById('text-input').value.trim();
+  if (!val) return;
+  addItem({ type: 'text', src: null, label: val, emoji: '💬' });
+  document.getElementById('text-input').value = '';
+}
+
+// Mixed text
+document.getElementById('mixed-label-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMixedText(); });
+function addMixedText() {
+  const val = document.getElementById('mixed-label-input').value.trim();
+  if (!val) return;
+  addItem({ type: 'text', src: null, label: val, emoji: '📝' });
+  document.getElementById('mixed-label-input').value = '';
+}
+
+// Custom
+function setCustomTab(t) {
+  customTab = t;
+  document.getElementById('tab-emoji').classList.toggle('active', t === 'emoji');
+  document.getElementById('tab-text-only').classList.toggle('active', t === 'text');
+  document.getElementById('custom-emoji-input').style.display = t === 'emoji' ? '' : 'none';
+}
+document.getElementById('custom-text-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCustomItem(); });
+function addCustomItem() {
+  const label = document.getElementById('custom-text-input').value.trim();
+  if (!label) return;
+  const emoji = customTab === 'emoji' ? (document.getElementById('custom-emoji-input').value.trim() || '🔷') : null;
+  addItem({ type: 'custom', src: null, label, emoji });
+  document.getElementById('custom-text-input').value = '';
+  document.getElementById('custom-emoji-input').value = '';
+}
+
+let itemIdCounter = 0;
+function addItem(item) {
+  item.id = 'I' + (++itemIdCounter);
+  items.push(item);
+  scores[item.id] = ELO_START;
+  renderItemsList();
+  updateStartBtn();
+}
+
+function removeItem(id) {
+  items = items.filter(i => i.id !== id);
+  delete scores[id];
+  renderItemsList();
+  updateStartBtn();
+}
+
+function renderItemsList() {
+  const list = document.getElementById('items-list');
+  list.innerHTML = '';
+  document.getElementById('count-badge').textContent = items.length;
+
+  items.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+
+    let thumbHtml = '';
+    if (item.src) {
+      thumbHtml = `<img class="item-thumb" src="${item.src}" alt="">`;
+    } else {
+      thumbHtml = `<div class="item-thumb-placeholder">${item.emoji || '📝'}</div>`;
+    }
+
+    row.innerHTML = `
+      ${thumbHtml}
+      <div class="item-label-wrap">
+        <div class="item-label">${escHtml(item.label)}</div>
+        <div class="item-sublabel">#${idx + 1} · ${item.type}</div>
+      </div>
+      <button class="item-del" onclick="removeItem('${item.id}')">✕</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function updateStartBtn() {
+  const btn = document.getElementById('start-btn');
+  const n = items.length;
+  const pairs = n * (n - 1) / 2;
+  if (n < 2) {
+    btn.disabled = true;
+    btn.textContent = 'Add at least 2 items';
+  } else {
+    btn.disabled = false;
+    btn.textContent = `Start Ranking ${n} items (${pairs} matchups) →`;
+  }
+}
+
+// ══════════ RANKING ══════════
+function generateMatchups(ids) {
+  const pairs = [];
+  for (let i = 0; i < ids.length; i++)
+    for (let j = i + 1; j < ids.length; j++)
+      pairs.push([ids[i], ids[j]]);
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  return pairs;
+}
+
+function startRanking() {
+  if (items.length < 2) return;
+  items.forEach(i => scores[i.id] = ELO_START);
+  matchups = generateMatchups(items.map(i => i.id));
+  currentMatch = 0;
+  completedCount = 0;
+  history = [];
+  skipped = [];
+  showScreen('rank-screen');
+  loadMatch();
+}
+
+function loadMatch() {
+  // Try to find next non-skipped match
+  while (currentMatch < matchups.length && skipped.includes(currentMatch)) currentMatch++;
+
+  if (currentMatch >= matchups.length) {
+    // Re-add skipped ones at end if any
+    if (skipped.length > 0) {
+      skipped.forEach(i => matchups.push(matchups[i]));
+      skipped = [];
+    } else {
+      showResults();
+      return;
+    }
+  }
+
+  const total = matchups.length;
+  const pct = Math.round((completedCount / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${completedCount} / ${total}`;
+
+  document.getElementById('card-a').onclick = () => vote('a');
+  document.getElementById('card-b').onclick = () => vote('b');
+
+  const [idA, idB] = matchups[currentMatch];
+  renderCard('card-a', items.find(i => i.id === idA));
+  renderCard('card-b', items.find(i => i.id === idB));
+}
+
+function renderCard(cardId, item) {
+  const card = document.getElementById(cardId);
+  card.className = 'match-card';
+  card.style.cssText = '';
+
+  if (!item) return;
+
+  if (item.src && item.type === 'photo') {
+    card.classList.add('photo-card');
+    card.innerHTML = `<img src="${item.src}" alt="${escHtml(item.label)}"><div class="card-pick-hint">Tap to pick</div>`;
+  } else if (item.src && item.type === 'mixed') {
+    card.classList.add('photo-card');
+    card.innerHTML = `
+      <img src="${item.src}" alt="${escHtml(item.label)}" style="width:100%;height:100%;object-fit:cover;display:block;">
+      <div class="mixed-card-label">${escHtml(item.label)}</div>
+      <div class="card-pick-hint">Tap to pick</div>
+    `;
+  } else {
+    card.classList.add('text-card');
+    const emoji = item.emoji || '💬';
+    card.innerHTML = `
+      <div class="text-card-emoji">${emoji}</div>
+      <div class="text-card-value">${escHtml(item.label)}</div>
+      <div class="card-pick-hint">Tap to pick</div>
+    `;
+  }
+}
+
+function vote(winner) {
+  const [idA, idB] = matchups[currentMatch];
+  const wId = winner === 'a' ? idA : idB;
+  const lId = winner === 'a' ? idB : idA;
+
+  history.push({ match: currentMatch, idA, idB, sA: scores[idA], sB: scores[idB] });
+
+  const [nW, nL] = eloUpdate(scores[wId], scores[lId]);
+  scores[wId] = nW;
+  scores[lId] = nL;
+
+  const winCard = document.getElementById(winner === 'a' ? 'card-a' : 'card-b');
+  winCard.classList.add('winner-flash');
+
+  completedCount++;
+  currentMatch++;
+  setTimeout(loadMatch, 180);
+}
+
+function voteTie() {
+  const [idA, idB] = matchups[currentMatch];
+  history.push({ match: currentMatch, idA, idB, sA: scores[idA], sB: scores[idB] });
+  // Tie: tiny ELO exchange toward each other
+  const [nA, nB] = eloTie(scores[idA], scores[idB]);
+  scores[idA] = nA; scores[idB] = nB;
+  completedCount++;
+  currentMatch++;
+  loadMatch();
+}
+
+function skipMatch() {
+  skipped.push(currentMatch);
+  currentMatch++;
+  loadMatch();
+}
+
+function undoLast() {
+  if (!history.length) return;
+  const last = history.pop();
+  scores[last.idA] = last.sA;
+  scores[last.idB] = last.sB;
+  if (completedCount > 0) completedCount--;
+  currentMatch = last.match;
+  loadMatch();
+}
+
+function confirmQuit() {
+  if (confirm('Quit ranking? Progress will be lost.')) goSetup();
+}
+
+// ══════════ ELO ══════════
+function eloUpdate(ws, ls) {
+  const exp = 1 / (1 + Math.pow(10, (ls - ws) / 400));
+  return [Math.round(ws + K * (1 - exp)), Math.round(ls + K * (0 - (1 - exp)))];
+}
+function eloTie(sA, sB) {
+  const expA = 1 / (1 + Math.pow(10, (sB - sA) / 400));
+  return [Math.round(sA + K * (0.5 - expA)), Math.round(sB + K * (0.5 - (1 - expA)))];
+}
+
+// ══════════ RESULTS ══════════
+function showResults() {
+  const sorted = items.map(i => ({ ...i, score: scores[i.id] })).sort((a, b) => b.score - a.score);
+  const maxS = sorted[0].score, minS = sorted[sorted.length - 1].score, range = maxS - minS || 1;
+
+  document.getElementById('results-meta').textContent = `${completedCount} matchups · ${items.length} items`;
+
+  const list = document.getElementById('results-list');
+  list.innerHTML = '';
+  const rankClass = ['r1','r2','r3'];
+
+  sorted.forEach((item, i) => {
+    const pct = Math.round(((item.score - minS) / range) * 100);
+    const medals = ['🥇','🥈','🥉'];
+    const div = document.createElement('div');
+    div.className = 'result-item';
+    div.style.animationDelay = `${i * 0.06}s`;
+
+    let thumbHtml = '';
+    if (item.src) {
+      thumbHtml = `<img class="result-thumb" src="${item.src}" alt="">`;
+    } else {
+      thumbHtml = `<div class="result-thumb-text">${item.emoji || '💬'}</div>`;
+    }
+
+    div.innerHTML = `
+      <div class="result-rank-num ${rankClass[i] || ''}">${medals[i] || (i + 1)}</div>
+      ${thumbHtml}
+      <div class="result-info">
+        <div class="result-name">${escHtml(item.label)}</div>
+        <div class="result-score">${item.score} ELO</div>
+        <div class="result-bar-bg"><div class="result-bar" data-pct="${pct}"></div></div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  showScreen('results-screen');
+  document.getElementById('results-screen').scrollTop = 0;
+  setTimeout(() => {
+    list.querySelectorAll('.result-bar').forEach(b => b.style.width = b.dataset.pct + '%');
+  }, 100);
+}
+
+function rankAgain() {
+  items.forEach(i => scores[i.id] = ELO_START);
+  matchups = generateMatchups(items.map(i => i.id));
+  currentMatch = 0; completedCount = 0; history = []; skipped = [];
+  showScreen('rank-screen');
+  loadMatch();
+}
+
+function addMoreItems() {
+  showScreen('setup-screen');
+}
+
+function exportResults() {
+  const sorted = items.map(i => ({ ...i, score: scores[i.id] })).sort((a, b) => b.score - a.score);
+  const text = sorted.map((item, i) => `#${i + 1} ${item.label} — ${item.score} ELO`).join('\n');
+  if (navigator.share) {
+    navigator.share({ title: 'BlindRank Results', text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+  } else {
+    alert(text);
+  }
+}
+
+function goSetup() {
+  items = []; scores = {}; matchups = []; itemIdCounter = 0;
+  currentMatch = 0; completedCount = 0; history = []; skipped = [];
+  renderItemsList(); updateStartBtn();
+  showScreen('setup-screen');
+}
+
+// ══════════ UTILS ══════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+selectMode('photo');
+updateStartBtn();
+</script>
+
 </body>
 </html>
